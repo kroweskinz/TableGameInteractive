@@ -11,7 +11,6 @@
       --bg2:#0f172a;
       --bg3:#111827;
       --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.09);
       --border:rgba(255,255,255,.12);
       --text:#fff;
       --muted:#b6c0d1;
@@ -20,26 +19,29 @@
       --green:#22c55e;
       --amber:#f59e0b;
       --violet:#8b5cf6;
+      --gold:#f7cc72;
+      --blue:#93e8ff;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
     body{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
       color:var(--text);
       background:
         radial-gradient(circle at top, rgba(56,189,248,.18), transparent 25%),
         linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 35%,var(--bg3) 100%);
       min-height:100vh;
     }
-    button,input,select,textarea{font:inherit}
+    button,input,select{font:inherit}
     button{cursor:pointer}
-    .app{max-width:1200px;margin:0 auto;padding:16px 16px 100px}
+    .app{max-width:1280px;margin:0 auto;padding:16px 16px 100px}
     .hero{display:flex;flex-direction:column;gap:16px}
-    .eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:#9be7ff}
+    .eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--blue)}
     h1{margin:0;font-size:34px;line-height:1.05}
     h2{margin:0;font-size:24px}
+    h3{margin:0;font-size:18px}
     p{margin:0}
-    .sub{color:var(--muted);font-size:15px;line-height:1.5;max-width:850px}
+    .sub{color:var(--muted);font-size:15px;line-height:1.5;max-width:900px}
     .top-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
     .mini-card,.card{
       background:var(--card);
@@ -83,6 +85,7 @@
     .btn.secondary{background:rgba(255,255,255,.08)}
     .btn.danger{background:rgba(239,68,68,.18);color:#ffd6d6}
     .btn.green{background:rgba(34,197,94,.18);color:#dcffe9}
+    .btn.gold{background:rgba(247,204,114,.18);color:#ffe9ba}
     .section{display:none;margin-top:16px}
     .section.active{display:block}
     .layout{display:grid;grid-template-columns:1fr;gap:16px}
@@ -164,6 +167,8 @@
     .starter{background:rgba(139,92,246,.18);color:#efe4ff}
     .bench{background:rgba(100,116,139,.22);color:#e8eef9}
     .inj{background:rgba(239,68,68,.18);color:#ffd2d2}
+    .legioner{background:rgba(247,204,114,.18);color:#ffe9ba;border-color:rgba(247,204,114,.22)}
+    .sng{background:rgba(34,197,94,.14);color:#d9ffe8;border-color:rgba(34,197,94,.24)}
     .player-stats{
       display:grid;
       grid-template-columns:1fr;
@@ -246,6 +251,12 @@
       gap:10px;
       align-items:flex-start;
     }
+    .rules-header{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-bottom:16px;
+    }
     .rules-grid{display:grid;grid-template-columns:1fr;gap:12px}
     .rule-block{
       padding:16px;
@@ -255,6 +266,13 @@
     }
     .rule-block h3{margin:0 0 10px;font-size:18px}
     .rule-list{display:flex;flex-direction:column;gap:8px;color:#dce6f5;font-size:14px;line-height:1.45}
+    .quick-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    .quick-card{
+      padding:16px;
+      border-radius:20px;
+      border:1px solid rgba(72,215,255,.18);
+      background:rgba(72,215,255,.08);
+    }
     .modal-bg{
       position:fixed;
       inset:0;
@@ -289,6 +307,8 @@
       .grid-2{grid-template-columns:1fr 1fr}
       .grid-3{grid-template-columns:repeat(3,1fr)}
       .leaders-grid{grid-template-columns:repeat(3,1fr)}
+      .rules-header{grid-template-columns:1.2fr .8fr}
+      .quick-grid{grid-template-columns:repeat(3,1fr)}
       .card-head{flex-direction:row;justify-content:space-between;align-items:flex-start}
       .player-actions{grid-template-columns:repeat(4,auto)}
       .mobile-only{display:none}
@@ -303,7 +323,7 @@
       <div>
         <div class="eyebrow">KHL Boardgame Web</div>
         <h1>Менеджер хоккейного клуба</h1>
-        <div class="sub">Готовая мобильная веб версия для публикации на бесплатном сервисе. Состав, матчи и изменения сохраняются в браузере устройства.</div>
+        <div class="sub">Готовая веб версия для публикации. Добавлены легионеры, новый бонус состава и полный красиво оформленный блок правил.</div>
       </div>
       <div class="top-stats" id="topStats"></div>
     </div>
@@ -349,6 +369,14 @@
           <div class="rating-grid" id="ratingGrid"></div>
         </div>
         <div>
+          <label class="label">Статус игрока</label>
+          <select id="formOrigin" class="select">
+            <option value="СНГ">СНГ</option>
+            <option value="Легионер">Легионер</option>
+          </select>
+        </div>
+        <div></div>
+        <div>
           <label class="label">Атака</label>
           <input id="formAttack" class="input" type="number" inputmode="numeric" />
         </div>
@@ -382,18 +410,15 @@
   </div>
 
 <script>
-const STORAGE_KEY = "khl-boardgame-publish-v1";
-const POSITIONS = ["НАП","ЗАЩ","ВРТ"];
+const STORAGE_KEY = "khl-boardgame-publish-v2";
 const RATINGS = ["2×","3×","4×","5×","҉"];
 const STARTER_LIMITS = {"НАП":4,"ЗАЩ":3,"ВРТ":1};
-
 const RESULT_OPTIONS = [
   { value:"WIN", label:"Победа без овертайма", points:2 },
   { value:"WIN_OT", label:"Победа в овертайме", points:2 },
   { value:"LOSS_OT", label:"Поражение в овертайме", points:1 },
   { value:"LOSS", label:"Поражение", points:0 }
 ];
-
 const TEAM_LEADERS = [
   { rank:1, team:"Металлург", attack:26, defense:16, total:42 },
   { rank:2, team:"Авангард", attack:20, defense:21, total:41 },
@@ -418,69 +443,173 @@ const TEAM_LEADERS = [
   { rank:21, team:"Лада", attack:11, defense:12, total:23 },
   { rank:22, team:"Сочи", attack:10, defense:11, total:21 }
 ];
-
-const RULES = {
-  overview: [
-    "2–8 игроков, длительность партии 90–120 минут.",
-    "Цель игры: первым завоевать два Кубка Гагарина.",
-    "Если после двух плейофф счёт по кубкам 1:1, играется финальный матч между обладателями кубков.",
-    "Если долг клуба превышает 600 ©, игрок банкротится и выбывает."
-  ],
-  structure: [
-    "Сезон 1: круги 1–3, затем Плейофф #1 и драфт.",
-    "Сезон 2: круги 4–6, затем Плейофф #2.",
-    "Побеждает тот, кто взял 2 Кубка Гагарина.",
-    "Если никто не взял 2 кубка за 2 сезона, играется финальный плейофф."
-  ],
-  match: [
-    "Матч по кубикам: разница 0–2 это Д6 против Д6.",
-    "Если преимущество по атаке +3–5, то Д8 против Д6. Если +6 и выше, то Д8 против Д4.",
-    "Если преимущество по защите +3–5, то Д6 против Д8. Если +6 и выше, то Д4 против Д8.",
-    "При счёте 1:1 играется овертайм, обе стороны бросают Д6 до победы.",
-    "Сенсация при разнице сил 6+ даёт +80 © вместо обычных +50 ©."
-  ],
-  economy: [
-    "Прохождение клетки СТАРТ даёт +150 © за круг.",
-    "Победа в матче даёт +50 ©, поражение стоит −50 ©.",
-    "Домашний матч даёт +50 © автоматически.",
-    "3 победы за сезон дают +80 ©, 5 побед дают +150 ©.",
-    "Если бюджет в начале хода ниже 150 ©, один раз за сезон можно получить +100 © помощи лиги.",
-    "Кредит банка КХЛ максимум 300 © на 2 полных круга под +15%."
-  ],
-  squad: [
-    "Базовые лимиты настолки: состав 6–9 игроков, нападающих 2–4, защитников 1–3, вратарь ровно 1.",
-    "В веб версии стартовый состав ограничен 4 НАП, 3 ЗАЩ и 1 ВРТ.",
-    "Травмированные игроки полностью исключаются из расчёта.",
-    "Молодёжная тройка: 3 игрока рейтинга 3× дают +3 к атаке."
-  ],
-  webclub: [
-    "Только игроки в основе участвуют в расчёте атаки и защиты.",
-    "Бонус расстановки: 3 НАП это +3 к атаке.",
-    "Бонус расстановки: 4 НАП это +5 к атаке и −2 к защите.",
-    "Бонус расстановки: 2 ЗАЩ это +3 к защите.",
-    "Бонус расстановки: 3 ЗАЩ это +6 к защите и −3 к атаке.",
-    "Вратарь учитывается только в защите."
-  ]
-};
-
 const initialPlayers = [
-  { id:1, name:"Сергей Волков", position:"НАП", rating:"3×", attack:4, defense:1, lineup:"starter", injured:false },
-  { id:2, name:"Илья Громов", position:"НАП", rating:"4×", attack:6, defense:2, lineup:"starter", injured:false },
-  { id:3, name:"Артём Левин", position:"НАП", rating:"3×", attack:3, defense:1, lineup:"starter", injured:false },
-  { id:4, name:"Дмитрий Орлов", position:"ЗАЩ", rating:"4×", attack:2, defense:5, lineup:"starter", injured:false },
-  { id:5, name:"Максим Крылов", position:"ЗАЩ", rating:"3×", attack:1, defense:4, lineup:"starter", injured:false },
-  { id:6, name:"Никита Соколов", position:"ВРТ", rating:"5×", attack:0, defense:6, lineup:"starter", injured:false },
-  { id:7, name:"Егор Демин", position:"НАП", rating:"2×", attack:2, defense:1, lineup:"bench", injured:false }
+  { id:1, name:"Сергей Волков", position:"НАП", rating:"3×", origin:"СНГ", attack:4, defense:1, lineup:"starter", injured:false },
+  { id:2, name:"Илья Громов", position:"НАП", rating:"4×", origin:"Легионер", attack:6, defense:2, lineup:"starter", injured:false },
+  { id:3, name:"Артём Левин", position:"НАП", rating:"3×", origin:"СНГ", attack:3, defense:1, lineup:"starter", injured:false },
+  { id:4, name:"Дмитрий Орлов", position:"ЗАЩ", rating:"4×", origin:"СНГ", attack:2, defense:5, lineup:"starter", injured:false },
+  { id:5, name:"Максим Крылов", position:"ЗАЩ", rating:"3×", origin:"Легионер", attack:1, defense:4, lineup:"starter", injured:false },
+  { id:6, name:"Никита Соколов", position:"ВРТ", rating:"5×", origin:"СНГ", attack:0, defense:6, lineup:"starter", injured:false },
+  { id:7, name:"Егор Демин", position:"НАП", rating:"2×", origin:"СНГ", attack:2, defense:1, lineup:"bench", injured:false }
 ];
-
+const RULE_SECTIONS = [
+  {
+    title:"🎯 Цель игры",
+    items:[
+      "Первый, кто завоевал два Кубка Гагарина, побеждает во всей партии.",
+      "Если после двух плейофф счёт по кубкам 1:1, играется финальный матч между двумя обладателями.",
+      "Если долг клуба превысил 600 ©, игрок банкротится и выбывает."
+    ]
+  },
+  {
+    title:"📋 Структура партии",
+    items:[
+      "Сезон 1: круги 1–3 → Плейофф #1 → Кубок Гагарина #1 → Драфт.",
+      "Сезон 2: круги 4–6 → Плейофф #2 → Кубок Гагарина #2.",
+      "Если за 2 сезона никто не оформил итоговую победу, играется финальный плейофф или финальный матч по правилам игры."
+    ]
+  },
+  {
+    title:"🏁 Подготовка к игре",
+    items:[
+      "Команды делятся на три тира силы: A, B и C.",
+      "Стартовый бюджет: Тир A — 400 ©, Тир B — 500 ©, Тир C — 600 © и бесплатный игрок 3× до старта.",
+      "Каждый игрок берёт 6 карточек своей команды из пула.",
+      "Минимум на старте: 2 нападающих, 1 защитник, 1 вратарь.",
+      "Итоговые атаку и защиту нужно записывать на Карте клуба открыто для всех."
+    ]
+  },
+  {
+    title:"👥 Лимиты состава",
+    items:[
+      "Нападающих: минимум 2, максимум 4.",
+      "Защитников: минимум 1, максимум 3.",
+      "Вратарь: ровно 1 и всегда обязателен.",
+      "Всего игроков: минимум 6, максимум 9, либо 10 со специальным слотом.",
+      "Без вратаря матч начинать нельзя."
+    ]
+  },
+  {
+    title:"🗺 Игровое поле",
+    items:[
+      "СТАРТ: +150 © при прохождении, здесь начинается каждый круг.",
+      "Матч с чужой командой: сыграйте матч, победитель получает +50 ©, проигравший теряет −50 ©.",
+      "Своя клетка матча: автоматическая победа и +50 ©.",
+      "Шанс: взять карту Шанс и выполнить эффект.",
+      "Вложения: взять карту Вложения и получить сумму.",
+      "День трансферов: открывается рынок текущего уровня круга.",
+      "Медицинский центр: вылечить травмированного игрока за 75 ©.",
+      "Событие сезона: глобальный эффект на всех игроков.",
+      "Банк КХЛ: кредит до 300 © на 2 круга под +15%.",
+      "Мини-аукцион: открыть 5 карт пула и взять 1 по минимальной цене.",
+      "Пауза: пропуск следующего хода."
+    ]
+  },
+  {
+    title:"🏒 Карточки игроков",
+    items:[
+      "Атака влияет на атакующий бросок и идёт в основном от нападающих.",
+      "Защита влияет на защитный бросок и идёт в основном от защитников и вратаря.",
+      "Рейтинг 2×: базовые молодые игроки.",
+      "Рейтинг 3×: 3 игрока 3× в составе дают бонус +3 к атаке команды.",
+      "Рейтинг 4×, 5× и ҉ усиливают состав сильнее и стоят дороже.",
+      "Вратарь учитывается только в защите."
+    ]
+  },
+  {
+    title:"⚔ Как проводить матч",
+    items:[
+      "Сложите атаку полевых игроков и защиту полевых игроков плюс защиту вратаря.",
+      "Добавьте бонусы расстановки и другие активные бонусы.",
+      "Матч состоит из двух бросков: атака А против защиты Б и атака Б против защиты А.",
+      "Разница 0–2: Д6 против Д6.",
+      "Атака выше на 3–5: атакующий Д8, защищающийся Д6.",
+      "Атака выше на 6+: атакующий Д8, защищающийся Д4.",
+      "Защита выше на 3–5: атакующий Д6, защищающийся Д8.",
+      "Защита выше на 6+: атакующий Д4, защищающийся Д8.",
+      "При счёте 1:1 играется овертайм.",
+      "Сенсация при разнице сил 6+ даёт аутсайдеру +80 © вместо +50 ©."
+    ]
+  },
+  {
+    title:"💰 Экономика клуба",
+    items:[
+      "Доход за круг через СТАРТ: +150 ©.",
+      "Победа в матче: +50 ©. Поражение: −50 ©.",
+      "Домашний матч на своей клетке: +50 © автоматически.",
+      "3 победы за сезон: +80 ©.",
+      "5 побед за сезон: +150 ©.",
+      "После серии из 3+ поражений победа даёт +100 © бонуса.",
+      "Если в начале хода бюджет ниже 150 ©, можно взять +100 © помощи лиги один раз за сезон.",
+      "Если бюджет ушёл в минус, сумма уходит в долг.",
+      "Долг выше 600 © означает банкротство."
+    ]
+  },
+  {
+    title:"🔄 Трансферный рынок",
+    items:[
+      "Круг 1: доступны 2× и 3×.",
+      "Круг 2: добавляются 4×.",
+      "Круг 3: добавляются 5× и ҉.",
+      "После НХЛ-драфта рынок сбрасывается, затем доступны все игроки.",
+      "Игрок на клетке День трансферов может взять до 2 карт по минимальной цене, остальное уходит на аукцион.",
+      "Продажа в пул идёт по 75% от базовой цены.",
+      "Тренировка даёт +2 к атаке или +2 к защите, но не повышает звёздность.",
+      "Прямой обмен можно проводить по договорённости, если не нарушается обязательность вратаря."
+    ]
+  },
+  {
+    title:"🎲 Карты Шанс, Вложения и События",
+    items:[
+      "Шанс: тренировка, травма, расходы, вызов, большинство, меньшинство, скаут, переговоры, слот состава, удача новичка, прорыв молодёжи.",
+      "Вложения: карты дохода от +50 © до +500 ©.",
+      "События сезона действуют на всех игроков сразу.",
+      "Примеры событий: бум посещаемости, травма лиги, ярмарка талантов, финансовый аудит, локаут, судейский скандал, звёздная игра, пресс-конференция, потолок зарплат."
+    ]
+  },
+  {
+    title:"🏆 Плейофф",
+    items:[
+      "Плейофф #1 проходит после 1–3 кругов, Плейофф #2 после 4–6 кругов.",
+      "Участвуют 8 команд: игроки и НПК-команды на оставшиеся места.",
+      "Посев идёт по числу побед за 3 круга, затем по бюджету.",
+      "Серии играются до 3 побед.",
+      "Призовые: чемпион +750 © и жетон Кубка Гагарина, финалист +500 ©, полуфиналисты +350 ©, четвертьфиналисты +200 ©."
+    ]
+  },
+  {
+    title:"🇺🇸 НХЛ-драфт между сезонами",
+    items:[
+      "После Плейофф #1 часть контрактов сгорает, составы обнуляются.",
+      "Порядок выбора обратный итогам плейофф: слабейшие выбирают раньше.",
+      "Каждый бесплатно выбирает 4 карточки из пула.",
+      "Стартовый бюджет сезона 2: чемпион 650 ©, финалист 550 ©, остальные 450 ©.",
+      "Рынок сезона 2 стартует заново, но в трансферах доступны все игроки."
+    ]
+  },
+  {
+    title:"⚡ Быстрая шпаргалка веб версии",
+    items:[
+      "В этой веб версии в основе можно держать до 4 НАП, 3 ЗАЩ и 1 ВРТ.",
+      "Только игроки в основе участвуют в расчёте атаки и защиты.",
+      "Травмированные игроки полностью исключаются из расчёта.",
+      "3 нападающих: +3 к атаке.",
+      "4 нападающих: +5 к атаке и −2 к защите.",
+      "2 защитника: +3 к защите.",
+      "3 защитника: +6 к защите и −3 к атаке.",
+      "3 игрока 3× одновременно в составе: +3 к атаке.",
+      "3 легионера 🌍 одновременно в составе: +3 к атаке и +2 к защите."
+    ]
+  }
+];
 const ui = {
   activeScreen:"club",
   clubTab:"starter",
   editingId:null,
   deleteId:null,
-  rating:"2×"
+  rating:"2×",
+  inlineRating:"2×"
 };
-
 let state = loadState();
 
 function loadState(){
@@ -516,11 +645,15 @@ function posClass(position){
   if(position==="ЗАЩ") return "zas";
   return "vrt";
 }
+function originClass(origin){
+  return origin==="Легионер" ? "legioner" : "sng";
+}
 function calcClubStats(){
   const hs = healthyStarters();
   const forwards = hs.filter(p=>p.position==="НАП");
   const defenders = hs.filter(p=>p.position==="ЗАЩ");
   const goalies = hs.filter(p=>p.position==="ВРТ");
+  const legioners = hs.filter(p=>p.origin==="Легионер");
 
   let attack = forwards.reduce((sum,p)=>sum+Number(p.attack||0),0) + defenders.reduce((sum,p)=>sum+Number(p.attack||0),0);
   let defense = forwards.reduce((sum,p)=>sum+Number(p.defense||0),0) + defenders.reduce((sum,p)=>sum+Number(p.defense||0),0) + goalies.reduce((sum,p)=>sum+Number(p.defense||0),0);
@@ -531,12 +664,14 @@ function calcClubStats(){
   if(defenders.length===2){ defense += 3; bonuses.push("2 защитника: +3 к защите"); }
   if(defenders.length===3){ defense += 6; attack -= 3; bonuses.push("3 защитника: +6 к защите, −3 к атаке"); }
   if(hs.filter(p=>p.rating==="3×").length >= 3){ attack += 3; bonuses.push("Молодёжная тройка: +3 к атаке"); }
+  if(legioners.length >= 3){ attack += 3; defense += 2; bonuses.push("3 легионера 🌍: +3 к атаке и +2 к защите"); }
 
   return {
     attack: Math.max(0, attack),
     defense: Math.max(0, defense),
     bonuses,
-    injuredCount: starters().filter(p=>p.injured).length
+    injuredCount: starters().filter(p=>p.injured).length,
+    legioners: legioners.length
   };
 }
 function calcMatchStats(){
@@ -606,7 +741,7 @@ function renderClub(){
           <div class="card-head">
             <div>
               <h2>Состав клуба</h2>
-              <div class="sub" style="max-width:none;margin-top:8px">Переключайте основу и запас, редактируйте игроков и следите за травмами.</div>
+              <div class="sub" style="max-width:none;margin-top:8px">Переключайте основу и запас, редактируйте игроков, задавайте статус легионера и следите за травмами.</div>
             </div>
             <div class="head-note">Лимиты основы: до 4 НАП, 3 ЗАЩ и 1 ВРТ</div>
           </div>
@@ -652,6 +787,17 @@ function renderClub(){
 
             <div class="grid-2">
               <div>
+                <label class="label">Статус игрока</label>
+                <select id="inlineOrigin" class="select">
+                  <option value="СНГ">СНГ</option>
+                  <option value="Легионер">Легионер</option>
+                </select>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="grid-2">
+              <div>
                 <label class="label">Атака</label>
                 <input id="inlineAttack" class="input" type="number" inputmode="numeric" placeholder="0" />
               </div>
@@ -670,6 +816,7 @@ function renderClub(){
               <div class="mini-label" style="font-size:14px;color:#fff">Как работает добавление</div>
               <div class="hint">Новый игрок автоматически идёт в основу, если там есть место по его позиции. Если места нет, он отправляется в запас.</div>
               <div class="hint">Ограничения 4 НАП, 3 ЗАЩ и 1 ВРТ действуют только для основного состава.</div>
+              <div class="hint">3 легионера 🌍 одновременно в здоровой основе дают +3 к атаке и +2 к защите.</div>
             </div>
           </div>
         </div>
@@ -686,10 +833,11 @@ function renderClub(){
           <div class="stack" style="margin-top:12px">
             ${smallBox("Игроков в основе", startersList.length)}
             ${smallBox("Травмировано", stats.injuredCount)}
+            ${smallBox("Легионеров в основе", stats.legioners)}
             <div class="small-box">
               <div class="mini-label">Запасные</div>
               <div class="stack" style="margin-top:10px">
-                ${benchList.length ? benchList.map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)"><span>${escapeHtml(p.name)}</span><span class="badge ${posClass(p.position)}">${p.position}</span></div>`).join("") : `<div class="hint">Скамейка пока пустая</div>`}
+                ${benchList.length ? benchList.map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)"><span>${escapeHtml(p.name)}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${posClass(p.position)}">${p.position}</span><span class="badge ${originClass(p.origin||"СНГ")}">${p.origin||"СНГ"}</span></div></div>`).join("") : `<div class="hint">Скамейка пока пустая</div>`}
               </div>
             </div>
           </div>
@@ -697,16 +845,17 @@ function renderClub(){
       </div>
     </div>
   `;
-
   buildInlineRatingButtons();
 }
 function playerCard(player){
+  const origin = player.origin || "СНГ";
   return `
     <div class="player ${player.injured ? "injured" : ""}">
       <div class="player-title">${escapeHtml(player.name)}</div>
       <div class="meta">
         <span class="badge ${posClass(player.position)}">${player.position}</span>
         <span class="badge rating">${player.rating}</span>
+        <span class="badge ${originClass(origin)}">${origin==="Легионер" ? "🌍 Легионер" : "СНГ"}</span>
         <span class="badge ${player.lineup==="starter" ? "starter" : "bench"}">${player.lineup==="starter" ? "Основа" : "Запас"}</span>
         ${player.injured ? `<span class="badge inj">Травма</span>` : ``}
       </div>
@@ -811,32 +960,43 @@ function renderLeaders(){
 }
 function renderRules(){
   document.getElementById("screen-rules").innerHTML = `
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <h2>Правила игры</h2>
-          <div class="sub" style="max-width:none;margin-top:8px">Отдельный блок с краткими и понятными правилами по исходному файлу, чтобы игроки могли быстро сверяться прямо во время партии.</div>
+    <div class="rules-header">
+      <div class="card">
+        <div class="card-head" style="margin-bottom:0">
+          <div>
+            <h2>Полные правила игры</h2>
+            <div class="sub" style="max-width:none;margin-top:8px">Красиво собранная шпаргалка по исходному файлу. Здесь есть цель игры, структура, матчи, экономика, трансферы, плейофф, драфт и правила именно для веб версии.</div>
+          </div>
         </div>
       </div>
-
-      <div class="rules-grid">
-        ${ruleBlock("Общее", RULES.overview)}
-        ${ruleBlock("Структура партии", RULES.structure)}
-        ${ruleBlock("Матчи и кубики", RULES.match)}
-        ${ruleBlock("Экономика клуба", RULES.economy)}
-        ${ruleBlock("Состав и слоты", RULES.squad)}
-        ${ruleBlock("Как считает веб версия", RULES.webclub)}
+      <div class="card">
+        <h2>Быстрая памятка</h2>
+        <div class="quick-grid" style="margin-top:12px">
+          <div class="quick-card">
+            <div class="mini-label">Матч</div>
+            <div style="font-weight:800;margin-top:8px">0–2 → Д6 / Д6<br>+3–5 → Д8 / Д6<br>+6 → Д8 / Д4</div>
+          </div>
+          <div class="quick-card">
+            <div class="mini-label">Состав</div>
+            <div style="font-weight:800;margin-top:8px">2–4 НАП<br>1–3 ЗАЩ<br>1 ВРТ</div>
+          </div>
+          <div class="quick-card">
+            <div class="mini-label">Веб бонус</div>
+            <div style="font-weight:800;margin-top:8px">3 легионера 🌍<br>+3 Атака<br>+2 Защита</div>
+          </div>
+        </div>
       </div>
     </div>
-  `;
-}
-function ruleBlock(title, items){
-  return `
-    <div class="rule-block">
-      <h3>${title}</h3>
-      <div class="rule-list">
-        ${items.map(item=>`<div>• ${item}</div>`).join("")}
-      </div>
+
+    <div class="rules-grid">
+      ${RULE_SECTIONS.map(section => `
+        <div class="rule-block">
+          <h3>${section.title}</h3>
+          <div class="rule-list">
+            ${section.items.map(item => `<div>• ${item}</div>`).join("")}
+          </div>
+        </div>
+      `).join("")}
     </div>
   `;
 }
@@ -855,10 +1015,10 @@ function setClubTab(tab){
 function buildInlineRatingButtons(){
   const container = document.getElementById("inlineRatingGrid");
   if(!container) return;
-  container.innerHTML = RATINGS.map(r=>`<button class="rating-btn ${ui.rating===r ? "active" : ""}" onclick="setInlineRating('${r}')">${r}</button>`).join("");
+  container.innerHTML = RATINGS.map(r=>`<button class="rating-btn ${ui.inlineRating===r ? "active" : ""}" onclick="setInlineRating('${r}')">${r}</button>`).join("");
 }
 function setInlineRating(rating){
-  ui.rating = rating;
+  ui.inlineRating = rating;
   buildInlineRatingButtons();
 }
 function showInlineError(message){
@@ -876,6 +1036,7 @@ function addInlinePlayer(){
   hideInlineError();
   const name = document.getElementById("inlineName").value.trim();
   const position = document.getElementById("inlinePosition").value;
+  const origin = document.getElementById("inlineOrigin").value;
   let attack = Number(document.getElementById("inlineAttack").value || 0);
   const defense = Number(document.getElementById("inlineDefense").value || 0);
 
@@ -890,7 +1051,8 @@ function addInlinePlayer(){
     id: Date.now(),
     name,
     position,
-    rating: ui.rating,
+    rating: ui.inlineRating,
+    origin,
     attack,
     defense,
     lineup,
@@ -900,9 +1062,10 @@ function addInlinePlayer(){
 
   document.getElementById("inlineName").value = "";
   document.getElementById("inlinePosition").value = "НАП";
+  document.getElementById("inlineOrigin").value = "СНГ";
   document.getElementById("inlineAttack").value = "";
   document.getElementById("inlineDefense").value = "";
-  ui.rating = "2×";
+  ui.inlineRating = "2×";
 
   renderAll();
 }
@@ -914,22 +1077,10 @@ function openEditModal(id){
   document.getElementById("playerModalTitle").textContent = "Редактировать игрока";
   document.getElementById("formName").value = player.name;
   document.getElementById("formPosition").value = player.position;
+  document.getElementById("formOrigin").value = player.origin || "СНГ";
   document.getElementById("formAttack").value = player.attack;
   document.getElementById("formDefense").value = player.defense;
   document.getElementById("deleteFromEditBtn").style.display = "inline-flex";
-  hideFormError();
-  buildModalRatingButtons();
-  showModal("playerModalBg");
-}
-function openAddModal(){
-  ui.editingId = null;
-  ui.rating = "2×";
-  document.getElementById("playerModalTitle").textContent = "Добавить игрока";
-  document.getElementById("formName").value = "";
-  document.getElementById("formPosition").value = "НАП";
-  document.getElementById("formAttack").value = "";
-  document.getElementById("formDefense").value = "";
-  document.getElementById("deleteFromEditBtn").style.display = "none";
   hideFormError();
   buildModalRatingButtons();
   showModal("playerModalBg");
@@ -956,6 +1107,7 @@ function savePlayerFromModal(){
   hideFormError();
   const name = document.getElementById("formName").value.trim();
   const position = document.getElementById("formPosition").value;
+  const origin = document.getElementById("formOrigin").value;
   let attack = Number(document.getElementById("formAttack").value || 0);
   const defense = Number(document.getElementById("formDefense").value || 0);
 
@@ -972,19 +1124,7 @@ function savePlayerFromModal(){
       showFormError(`Нельзя изменить позицию: в основе уже максимум ${STARTER_LIMITS[position]} для ${position}`);
       return;
     }
-    state.players = state.players.map(p=>p.id===ui.editingId ? { ...p, name, position, rating:ui.rating, attack, defense } : p);
-  } else {
-    const lineup = canBeStarter(position) ? "starter" : "bench";
-    state.players.push({
-      id: Date.now(),
-      name,
-      position,
-      rating: ui.rating,
-      attack,
-      defense,
-      injured:false,
-      lineup
-    });
+    state.players = state.players.map(p=>p.id===ui.editingId ? { ...p, name, position, origin, rating:ui.rating, attack, defense } : p);
   }
 
   saveState();
@@ -1015,7 +1155,7 @@ function toggleLineup(id){
 function requestDelete(id){
   ui.deleteId = id;
   const player = state.players.find(p=>p.id===id);
-  document.getElementById("deleteInfo").innerHTML = player ? `<div style="font-size:18px;font-weight:800">${escapeHtml(player.name)}</div><div class="hint" style="margin-top:6px">${player.position} · ${player.lineup==="starter" ? "Основа" : "Запас"}</div>` : "";
+  document.getElementById("deleteInfo").innerHTML = player ? `<div style="font-size:18px;font-weight:800">${escapeHtml(player.name)}</div><div class="hint" style="margin-top:6px">${player.position} · ${player.lineup==="starter" ? "Основа" : "Запас"} · ${player.origin||"СНГ"}</div>` : "";
   showModal("deleteModalBg");
 }
 function confirmDelete(){
@@ -1047,6 +1187,7 @@ function resetAllData(){
   if(!confirm("Сбросить весь состав и историю матчей?")) return;
   state = { players:[...initialPlayers], matches:[] };
   ui.rating = "2×";
+  ui.inlineRating = "2×";
   saveState();
   renderAll();
 }
