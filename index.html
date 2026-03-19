@@ -251,6 +251,15 @@
       gap:10px;
       align-items:flex-start;
     }
+    .history-actions{display:flex;gap:8px;align-items:center}
+    .mini-delete{
+      border:1px solid rgba(239,68,68,.24);
+      background:rgba(239,68,68,.14);
+      color:#ffd6d6;
+      border-radius:12px;
+      padding:8px 10px;
+      font-weight:700;
+    }
     .rules-header{
       display:grid;
       grid-template-columns:1fr;
@@ -323,7 +332,7 @@
       <div>
         <div class="eyebrow">KHL Boardgame Web</div>
         <h1>Менеджер хоккейного клуба</h1>
-        <div class="sub">Готовая веб версия для публикации. Добавлены легионеры, новый бонус состава и полный красиво оформленный блок правил.</div>
+        <div class="sub">Обновлённая версия для публикации. Исправлена таблица лидеров, клуб стартует пустым, а добавленные матчи можно удалять.</div>
       </div>
       <div class="top-stats" id="topStats"></div>
     </div>
@@ -410,7 +419,7 @@
   </div>
 
 <script>
-const STORAGE_KEY = "khl-boardgame-publish-v2";
+const STORAGE_KEY = "khl-boardgame-publish-v3";
 const RATINGS = ["2×","3×","4×","5×","҉"];
 const STARTER_LIMITS = {"НАП":4,"ЗАЩ":3,"ВРТ":1};
 const RESULT_OPTIONS = [
@@ -424,7 +433,7 @@ const TEAM_LEADERS = [
   { rank:2, team:"Авангард", attack:20, defense:21, total:41 },
   { rank:3, team:"Локомотив", attack:15, defense:26, total:41 },
   { rank:4, team:"Ак Барс", attack:18, defense:21, total:39 },
-  { rank:5, team:"Северсталь", attack:28, defense:10, total:38 },
+  { rank:5, team:"Северсталь", attack:22, defense:16, total:38 },
   { rank:6, team:"Динамо Минск", attack:28, defense:10, total:38 },
   { rank:7, team:"ЦСКА", attack:13, defense:23, total:36 },
   { rank:8, team:"Автомобилист", attack:15, defense:21, total:36 },
@@ -432,8 +441,8 @@ const TEAM_LEADERS = [
   { rank:10, team:"Торпедо", attack:17, defense:16, total:33 },
   { rank:11, team:"Динамо Москва", attack:11, defense:21, total:32 },
   { rank:12, team:"Салават Юлаев", attack:23, defense:9, total:32 },
-  { rank:13, team:"Спартак", attack:12, defense:20, total:32 },
-  { rank:14, team:"Трактор", attack:18, defense:13, total:31 },
+  { rank:13, team:"Спартак", attack:12, defense:19, total:31 },
+  { rank:14, team:"Трактор", attack:17, defense:13, total:30 },
   { rank:15, team:"Нефтехимик", attack:16, defense:14, total:30 },
   { rank:16, team:"Сибирь", attack:12, defense:17, total:29 },
   { rank:17, team:"Амур", attack:13, defense:12, total:25 },
@@ -443,15 +452,7 @@ const TEAM_LEADERS = [
   { rank:21, team:"Лада", attack:11, defense:12, total:23 },
   { rank:22, team:"Сочи", attack:10, defense:11, total:21 }
 ];
-const initialPlayers = [
-  { id:1, name:"Сергей Волков", position:"НАП", rating:"3×", origin:"СНГ", attack:4, defense:1, lineup:"starter", injured:false },
-  { id:2, name:"Илья Громов", position:"НАП", rating:"4×", origin:"Легионер", attack:6, defense:2, lineup:"starter", injured:false },
-  { id:3, name:"Артём Левин", position:"НАП", rating:"3×", origin:"СНГ", attack:3, defense:1, lineup:"starter", injured:false },
-  { id:4, name:"Дмитрий Орлов", position:"ЗАЩ", rating:"4×", origin:"СНГ", attack:2, defense:5, lineup:"starter", injured:false },
-  { id:5, name:"Максим Крылов", position:"ЗАЩ", rating:"3×", origin:"Легионер", attack:1, defense:4, lineup:"starter", injured:false },
-  { id:6, name:"Никита Соколов", position:"ВРТ", rating:"5×", origin:"СНГ", attack:0, defense:6, lineup:"starter", injured:false },
-  { id:7, name:"Егор Демин", position:"НАП", rating:"2×", origin:"СНГ", attack:2, defense:1, lineup:"bench", injured:false }
-];
+const initialPlayers = [];
 const RULE_SECTIONS = [
   {
     title:"🎯 Цель игры",
@@ -618,7 +619,7 @@ function loadState(){
     if(!raw) return { players:[...initialPlayers], matches:[] };
     const parsed = JSON.parse(raw);
     return {
-      players: Array.isArray(parsed.players) && parsed.players.length ? parsed.players : [...initialPlayers],
+      players: Array.isArray(parsed.players) ? parsed.players : [...initialPlayers],
       matches: Array.isArray(parsed.matches) ? parsed.matches : []
     };
   } catch(e){
@@ -741,7 +742,7 @@ function renderClub(){
           <div class="card-head">
             <div>
               <h2>Состав клуба</h2>
-              <div class="sub" style="max-width:none;margin-top:8px">Переключайте основу и запас, редактируйте игроков, задавайте статус легионера и следите за травмами.</div>
+              <div class="sub" style="max-width:none;margin-top:8px">Клуб стартует пустым. Добавляйте игроков вручную, собирайте основу и запас, задавайте статус легионера и следите за травмами.</div>
             </div>
             <div class="head-note">Лимиты основы: до 4 НАП, 3 ЗАЩ и 1 ВРТ</div>
           </div>
@@ -753,7 +754,7 @@ function renderClub(){
           </div>
 
           <div class="player-list" style="margin-top:12px">
-            ${visible.length ? visible.map(playerCard).join("") : `<div class="empty">Здесь пока нет игроков.</div>`}
+            ${visible.length ? visible.map(playerCard).join("") : `<div class="empty">Клуб пока пуст. Добавьте игроков вручную справа.</div>`}
           </div>
         </div>
       </div>
@@ -916,7 +917,10 @@ function renderMatches(){
                     <div style="font-weight:800">${meta.label}</div>
                     <div class="hint" style="margin-top:6px">${match.createdAt}</div>
                   </div>
-                  <span class="badge rating">+${meta.points} очк.</span>
+                  <div class="history-actions">
+                    <span class="badge rating">+${meta.points} очк.</span>
+                    <button class="mini-delete" onclick="deleteMatch(${match.id})">Удалить</button>
+                  </div>
                 </div>
               `;
             }).join("") : `<div class="empty">Здесь появится история ваших матчей.</div>`}
@@ -1177,6 +1181,12 @@ function addMatch(){
     result: value,
     createdAt: new Date().toLocaleString("ru-RU")
   });
+  saveState();
+  renderTop();
+  renderMatches();
+}
+function deleteMatch(id){
+  state.matches = state.matches.filter(match => match.id !== id);
   saveState();
   renderTop();
   renderMatches();
