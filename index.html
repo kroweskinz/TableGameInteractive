@@ -260,22 +260,6 @@
       padding:8px 10px;
       font-weight:700;
     }
-    .match-win{
-      border-color:rgba(34,197,94,.28);
-      background:rgba(34,197,94,.10);
-    }
-    .match-loss{
-      border-color:rgba(239,68,68,.28);
-      background:rgba(239,68,68,.10);
-    }
-    .match-win-badge{
-      background:rgba(34,197,94,.18);
-      color:#dcffe9;
-    }
-    .match-loss-badge{
-      background:rgba(239,68,68,.18);
-      color:#ffd6d6;
-    }
     .rules-header{
       display:grid;
       grid-template-columns:1fr;
@@ -403,14 +387,14 @@
         <div></div>
         <div>
           <label class="label">Атака</label>
-          <input id="formAttack" class="input" type="text" inputmode="decimal" />
+          <input id="formAttack" class="input" type="number" inputmode="numeric" />
         </div>
         <div>
           <label class="label">Защита</label>
-          <input id="formDefense" class="input" type="text" inputmode="decimal" />
+          <input id="formDefense" class="input" type="number" inputmode="numeric" />
         </div>
       </div>
-      <div class="hint" style="margin-top:10px">Для вратаря атака автоматически становится 0. Значения атаки и защиты можно вводить с минусом.</div>
+      <div class="hint" style="margin-top:10px">Для вратаря атака автоматически становится 0.</div>
       <div id="formError" class="error" style="display:none;margin-top:12px"></div>
       <div class="modal-actions">
         <button class="btn danger" id="deleteFromEditBtn" style="display:none">Удалить игрока</button>
@@ -435,7 +419,7 @@
   </div>
 
 <script>
-const STORAGE_KEY = "khl-boardgame-publish-v4";
+const STORAGE_KEY = "khl-boardgame-publish-v5";
 const RATINGS = ["2×","3×","4×","5×","҉"];
 const STARTER_LIMITS = {"НАП":4,"ЗАЩ":3,"ВРТ":1};
 const RESULT_OPTIONS = [
@@ -680,7 +664,14 @@ function calcClubStats(){
   if(forwards.length===4){ attack += 5; defense -= 2; bonuses.push("4 нападающих: +5 к атаке, −2 к защите"); }
   if(defenders.length===2){ defense += 3; bonuses.push("2 защитника: +3 к защите"); }
   if(defenders.length===3){ defense += 6; attack -= 3; bonuses.push("3 защитника: +6 к защите, −3 к атаке"); }
+  if(hs.filter(p=>p.rating==="3×").length >= 3){ attack += 3; bonuses.push("Молодёжная тройка: +3 к атаке"); }
   if(legioners.length >= 3){ attack += 3; defense += 2; bonuses.push("3 легионера 🌍: +3 к атаке и +2 к защите"); }
+  const cisPlayers = hs.filter(p => (p.origin || "СНГ") === "СНГ");
+  if(hs.length === 6 && cisPlayers.length === 6){
+    attack += 3;
+    defense += 3;
+    bonuses.push("Русская пятёрка: 6 игроков СНГ в основе дают +3 к атаке и +3 к защите");
+  }
 
   return {
     attack: Math.max(0, attack),
@@ -815,15 +806,15 @@ function renderClub(){
             <div class="grid-2">
               <div>
                 <label class="label">Атака</label>
-                <input id="inlineAttack" class="input" type="text" inputmode="decimal" placeholder="Например, -1" />
+                <input id="inlineAttack" class="input" type="number" inputmode="numeric" placeholder="0" />
               </div>
               <div>
                 <label class="label">Защита</label>
-                <input id="inlineDefense" class="input" type="text" inputmode="decimal" placeholder="Например, -2" />
+                <input id="inlineDefense" class="input" type="number" inputmode="numeric" placeholder="0" />
               </div>
             </div>
 
-            <div class="hint">Для вратаря атака автоматически будет 0. Значения атаки и защиты можно вводить с минусом, например -1 или -2.</div>
+            <div class="hint">Для вратаря атака автоматически будет 0.</div>
             <div id="inlineError" class="error" style="display:none"></div>
 
             <button class="btn primary" onclick="addInlinePlayer()">Добавить игрока</button>
@@ -899,11 +890,13 @@ function renderMatches(){
           <div class="stack" style="margin-top:12px">
             <div>
               <label class="label">Результат матча</label>
-              <select id="matchResultSelect" class="select">
-                ${RESULT_OPTIONS.map(opt=>`<option value="${opt.value}">${opt.label}</option>`).join("")}
-              </select>
+              <div class="grid-2">
+                <button class="btn green" onclick="addMatchByResult('WIN')">Победа</button>
+                <button class="btn green" onclick="addMatchByResult('WIN_OT')">Победа в ОТ</button>
+                <button class="btn danger" onclick="addMatchByResult('LOSS_OT')">Поражение в ОТ</button>
+                <button class="btn danger" onclick="addMatchByResult('LOSS')">Поражение</button>
+              </div>
             </div>
-            <button class="btn primary" onclick="addMatch()">Добавить результат</button>
 
             <div class="grid-2">
               ${statCard("Очки", stats.points, "2 за победу, 1 за поражение в ОТ")}
@@ -926,15 +919,14 @@ function renderMatches(){
           <div class="history" style="margin-top:12px">
             ${state.matches.length ? state.matches.map(match=>{
               const meta = RESULT_OPTIONS.find(r=>r.value===match.result);
-              const isWin = match.result === "WIN" || match.result === "WIN_OT";
               return `
-                <div class="history-item ${isWin ? "match-win" : "match-loss"}">
+                <div class="history-item">
                   <div>
                     <div style="font-weight:800">${meta.label}</div>
                     <div class="hint" style="margin-top:6px">${match.createdAt}</div>
                   </div>
                   <div class="history-actions">
-                    <span class="badge ${isWin ? "match-win-badge" : "match-loss-badge"}">+${meta.points} очк.</span>
+                    <span class="badge rating">+${meta.points} очк.</span>
                     <button class="mini-delete" onclick="deleteMatch(${match.id})">Удалить</button>
                   </div>
                 </div>
@@ -1004,6 +996,10 @@ function renderRules(){
             <div class="mini-label">Веб бонус</div>
             <div style="font-weight:800;margin-top:8px">3 легионера 🌍<br>+3 Атака<br>+2 Защита</div>
           </div>
+          <div class="quick-card">
+            <div class="mini-label">Русская пятёрка</div>
+            <div style="font-weight:800;margin-top:8px">6 игроков СНГ в основе<br>+3 Атака<br>+3 Защита</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1046,12 +1042,6 @@ function showInlineError(message){
   el.textContent = message;
   el.style.display = "block";
 }
-function parseStatValue(value){
-  const normalized = String(value).trim().replace(",", ".");
-  if(normalized === "") return 0;
-  const num = Number(normalized);
-  return Number.isFinite(num) ? num : NaN;
-}
 function hideInlineError(){
   const el = document.getElementById("inlineError");
   if(!el) return;
@@ -1063,15 +1053,11 @@ function addInlinePlayer(){
   const name = document.getElementById("inlineName").value.trim();
   const position = document.getElementById("inlinePosition").value;
   const origin = document.getElementById("inlineOrigin").value;
-  let attack = parseStatValue(document.getElementById("inlineAttack").value);
-  let defense = parseStatValue(document.getElementById("inlineDefense").value);
+  let attack = Number(document.getElementById("inlineAttack").value || 0);
+  const defense = Number(document.getElementById("inlineDefense").value || 0);
 
   if(!name){
     showInlineError("Введите имя игрока");
-    return;
-  }
-  if(Number.isNaN(attack) || Number.isNaN(defense)){
-    showInlineError("Атака и защита должны быть числами. Можно использовать отрицательные значения, например -1.");
     return;
   }
   if(position === "ВРТ") attack = 0;
@@ -1138,15 +1124,11 @@ function savePlayerFromModal(){
   const name = document.getElementById("formName").value.trim();
   const position = document.getElementById("formPosition").value;
   const origin = document.getElementById("formOrigin").value;
-  let attack = parseStatValue(document.getElementById("formAttack").value);
-  let defense = parseStatValue(document.getElementById("formDefense").value);
+  let attack = Number(document.getElementById("formAttack").value || 0);
+  const defense = Number(document.getElementById("formDefense").value || 0);
 
   if(!name){
     showFormError("Введите имя игрока");
-    return;
-  }
-  if(Number.isNaN(attack) || Number.isNaN(defense)){
-    showFormError("Атака и защита должны быть числами. Можно использовать отрицательные значения, например -1.");
     return;
   }
   if(position === "ВРТ") attack = 0;
@@ -1204,8 +1186,7 @@ function confirmDelete(){
   hideModal("deleteModalBg");
   renderAll();
 }
-function addMatch(){
-  const value = document.getElementById("matchResultSelect").value;
+function addMatchByResult(value){
   state.matches.unshift({
     id: Date.now(),
     result: value,
